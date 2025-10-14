@@ -1,157 +1,370 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Galeria - Forjados no Legado</title>
-  <link rel="icon" href="logo.png" type="image/png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FORJADOS LEGADO — Galeria</title>
+
+  <!-- face-api.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
+  <!-- heic2any para tentar converter HEIC no cliente (se suportado) -->
+  <script defer src="https://unpkg.com/heic2any/dist/heic2any.min.js"></script>
+
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 0;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    :root{
+      --bg:#000;
+      --accent1:#ff2c00;
+      --accent2:#ff6a00;
+      --text:#f5f5f5;
+      --card:#0f1720;
     }
-
-    header {
-      background: linear-gradient(135deg, #1e293b, #334155);
-      color: white;
-      width: 100%;
-      padding: 20px 0;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial;
+      background:var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
-
-    header img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      margin-bottom: 10px;
+    header{
+      text-align:center;
+      padding:28px 16px;
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      color:#fff;
+      box-shadow:0 6px 20px rgba(0,0,0,0.4);
     }
-
-    h1 {
-      margin: 10px 0 0;
-      font-size: 24px;
+    header img{width:120px;height:120px;border-radius:16px;object-fit:cover}
+    header h1{margin:12px 0 4px;font-size:28px;letter-spacing:2px}
+    header p{margin:0;color:rgba(255,255,255,0.9)}
+    main{max-width:1200px;margin:28px auto;padding:0 16px}
+    #controls{display:flex;gap:12px;justify-content:center;margin-bottom:18px}
+    .btn{
+      background:linear-gradient(90deg,var(--accent2),var(--accent1));
+      color:#fff;border:none;padding:10px 16px;border-radius:10px;font-weight:700;
+      cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.3)
     }
-
-    #galeria {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
-      padding: 30px;
-      width: 100%;
-      max-width: 1200px;
+    .btn.secondary{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);font-weight:600;
     }
-
-    .foto {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      overflow: hidden;
-      transition: transform 0.2s;
-      text-align: center;
+    #status{margin-top:8px;text-align:center;color:rgba(255,255,255,0.85)}
+    #galeria{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+      gap:16px;
     }
-
-    .foto:hover {
-      transform: scale(1.03);
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;padding:8px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,0.6);
+      transition:transform .18s;overflow:hidden;
     }
-
-    .foto img {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
+    .card:hover{transform:translateY(-6px)}
+    .thumb{
+      width:100%;height:140px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;
+      color:rgba(255,255,255,0.6);font-size:14px;object-fit:cover;
     }
-
-    .foto p {
-      font-weight: 600;
-      font-size: 15px;
-      color: #334155;
-      margin: 8px 0;
+    .meta{padding:8px 6px}
+    .meta p{margin:6px 0 10px;font-size:13px;color:rgba(255,255,255,0.9);font-weight:600}
+    .meta a{display:inline-block;margin:6px 6px;color:var(--accent2);text-decoration:none;font-weight:700}
+    footer{color:rgba(255,255,255,.6);text-align:center;padding:20px 0;margin-top:32px;border-top:1px solid rgba(255,255,255,0.03)}
+    /* modal simples */
+    .modal{
+      position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,0.6);z-index:90;visibility:hidden;opacity:0;transition:opacity .2s;
     }
-
-    .foto a {
-      text-decoration: none;
-      color: #2563eb;
-      font-size: 14px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 13px;
-      color: #777;
-      padding: 20px 0;
-      border-top: 1px solid #ddd;
-      margin-top: 40px;
-      width: 100%;
-      background: #f8fafc;
-    }
-
-    #botao-rosto {
-      margin-top: 10px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 18px;
-      font-size: 15px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-
-    #botao-rosto:hover {
-      background: #1d4ed8;
+    .modal.show{visibility:visible;opacity:1}
+    .modal .panel{background:#0b1116;padding:18px;border-radius:12px;width:95%;max-width:720px;color:var(--text)}
+    .progress{height:10px;background:#111;border-radius:6px;overflow:hidden;margin-top:8px}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent1));width:0%}
+    .matches{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .match{background:#081018;padding:6px;border-radius:8px;color:#fff;font-size:13px}
+    @media(max-width:520px){
+      header img{width:92px;height:92px}
+      .thumb{height:110px}
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="Logo Forjados" />
-    <h1>📸 Galeria - Forjados no Legado</h1>
-    <button id="botao-rosto" onclick="abrirRostos()">Ver rostos parecidos 🤝</button>
+    <img id="logo" src="logo.png" alt="Forjados logo">
+    <h1>FORJADOS LEGADO</h1>
+    <p>Memórias do evento — compartilhe, encontre e recorde</p>
   </header>
 
-  <div id="galeria">Carregando fotos...</div>
+  <main>
+    <div id="controls">
+      <button id="btn-search-face" class="btn">Procurar meu rosto 🤝</button>
+      <button id="btn-refresh" class="btn secondary">Recarregar galeria</button>
+    </div>
 
-  <footer>
-    © 2025 - Ministério Forjados no Legado<br>
-    Desenvolvido com 💙 para servir.
-  </footer>
+    <div id="status">Carregando galeria...</div>
 
-  <script>
-    async function carregarFotos() {
-      const container = document.getElementById('galeria');
-      try {
-        const res = await fetch('fotos.json');
-        const fotos = await res.json();
-        container.innerHTML = '';
+    <div id="galeria" aria-live="polite"></div>
+  </main>
 
-        fotos.forEach(foto => {
-          const div = document.createElement('div');
-          div.className = 'foto';
-          div.innerHTML = `
-            <img src="${foto.url}" alt="${foto.nome}" loading="lazy">
-            <p>${foto.nome}</p>
-            <a href="${foto.url}" target="_blank">Ver / Baixar</a>
-          `;
-          container.appendChild(div);
-        });
-      } catch (err) {
-        container.textContent = 'Erro ao carregar as fotos.';
-        console.error(err);
+  <footer>© FORJADOS LEGADO — Desenvolvido para servir</footer>
+
+  <!-- Modal para procurar rosto -->
+  <div id="modal" class="modal">
+    <div class="panel">
+      <h3>Procurar meu rosto nas fotos</h3>
+      <p>Faça upload de uma selfie ou use a câmera. O processamento roda no seu navegador (longos processos podem demorar).</p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <input id="selfie-file" type="file" accept="image/*" />
+        <button id="use-camera" class="btn secondary">📷 Câmera</button>
+        <button id="start-scan" class="btn">Iniciar busca</button>
+        <button id="close-modal" class="btn secondary">Fechar</button>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="progress"><i id="progbar"></i></div>
+        <div id="modal-log" style="margin-top:8px;color:rgba(255,255,255,0.85)"></div>
+        <div id="matches" class="matches"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* -------------------------
+  Utilitários
+----------------------------*/
+const $ = sel => document.querySelector(sel);
+const status = $('#status');
+const gal = $('#galeria');
+const modal = $('#modal');
+const modalLog = $('#modal-log');
+const prog = $('#progbar');
+
+function logStatus(msg){
+  status.textContent = msg;
+}
+function modalLogAdd(txt){
+  modalLog.textContent = (modalLog.textContent? modalLog.textContent + '\\n' : '') + txt;
+}
+
+/* -------------------------
+  CARREGAR fotos.json e renderizar
+  - tenta renderizar as imagens (se forem HEIC, tenta converter com heic2any)
+----------------------------*/
+async function fetchBlobFromUrl(url){
+  // fetcha o blob direto (CORS deve permitir — os links do seu fotos.json apontam para Google Drive
+  // que deve permitir visualização -- se houver bloqueio, imagem ficará indisponível)
+  const res = await fetch(url).catch(e => { throw new Error('fetch error'); });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const blob = await res.blob();
+  return blob;
+}
+
+async function makeObjectURLFromFoto(foto){
+  // foto.url pode apontar para .HEIC; tentamos converter se for necessário
+  try{
+    const blob = await fetchBlobFromUrl(foto.url);
+    const type = blob.type || '';
+    if(type.includes('heic') || foto.nome?.toLowerCase().endsWith('.heic')){
+      // tenta converter via heic2any
+      if(window.heic2any){
+        try{
+          const conv = await heic2any({blob, toType: "image/jpeg", quality: 0.85});
+          return URL.createObjectURL(conv);
+        }catch(e){
+          console.warn('heic2any failed:', e);
+          // fallback: URL do blob (muitos browsers não exibem .heic)
+          return URL.createObjectURL(blob);
+        }
+      } else {
+        return URL.createObjectURL(blob);
       }
+    } else {
+      return URL.createObjectURL(blob);
     }
+  }catch(err){
+    console.warn('erro ao criar objectURL', err);
+    throw err;
+  }
+}
 
-    function abrirRostos() {
-      alert("✨ Em breve: o sistema de reconhecimento facial será ativado aqui!");
+async function renderGallery(){
+  gal.innerHTML = '';
+  logStatus('Carregando fotos.json...');
+  try{
+    const res = await fetch('Forjados/fotos.json');
+    if(!res.ok) throw new Error('Não foi possível ler fotos.json');
+    const fotos = await res.json();
+    logStatus(`Encontradas ${fotos.length} fotos. Carregando miniaturas (pode demorar)...`);
+    // render placeholders and then load thumb objectURLs in background
+    for(const foto of fotos){
+      const c = document.createElement('div'); c.className='card';
+      c.innerHTML = `
+        <div class="thumb" data-url="${foto.url}" data-nome="${foto.nome}">
+          <span>carregando...</span>
+        </div>
+        <div class="meta">
+          <p>${foto.nome}</p>
+          <a href="${foto.url}" target="_blank">Ver / Baixar</a>
+        </div>`;
+      gal.appendChild(c);
     }
+    // load images in batches to avoid travar
+    const thumbs = Array.from(document.querySelectorAll('.thumb'));
+    const batch = 6;
+    for(let i=0;i<thumbs.length;i+=batch){
+      const group = thumbs.slice(i,i+batch);
+      await Promise.all(group.map(async el=>{
+        const url = el.dataset.url;
+        const nome = el.dataset.nome;
+        try{
+          const src = await makeObjectURLFromFoto({url,nome});
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = nome;
+          img.loading = 'lazy';
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          el.innerHTML = '';
+          el.appendChild(img);
+        }catch(e){
+          el.innerHTML = '<div style="padding:8px;color:#999">não foi possível carregar</div>';
+        }
+      }));
+    }
+    logStatus('Galeria carregada.');
+  }catch(e){
+    console.error(e);
+    logStatus('Erro ao carregar a galeria. Verifique fotos.json e permissões CORS dos arquivos.');
+    gal.innerHTML = '<div style="color:#f66;padding:16px">Erro ao carregar as imagens — veja console.</div>';
+  }
+}
 
-    carregarFotos();
-  </script>
+/* -------------------------
+  RECONHECIMENTO FACIAL (client-side)
+  - carrega modelos da pasta Forjados/models
+  - pede selfie e compara com todas as imagens do fotos.json
+  - processo em lotes com barra de progresso
+----------------------------*/
+let loadedModels = false;
+async function loadFaceModels(){
+  if(loadedModels) return;
+  logStatus('Carregando modelos de reconhecimento (pode demorar) ...');
+  await faceapi.nets.tinyFaceDetector.loadFromUri('Forjados/models');
+  await faceapi.nets.faceLandmark68Net.loadFromUri('Forjados/models');
+  await faceapi.nets.faceRecognitionNet.loadFromUri('Forjados/models');
+  loadedModels = true;
+  logStatus('Modelos carregados.');
+}
+
+function showModal(){ modal.classList.add('show'); modalLog.textContent=''; prog.style.width='0%'; $('#matches').innerHTML=''; }
+function hideModal(){ modal.classList.remove('show'); }
+
+async function findFacesWithSelfie(selfieBlob){
+  await loadFaceModels();
+  modalLogAdd('Calculando descritor da selfie...');
+  // cria img da selfie
+  const selfieUrl = URL.createObjectURL(selfieBlob);
+  const img = new Image();
+  img.src = selfieUrl;
+  await img.decode();
+
+  const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
+  const sdet = await faceapi.detectSingleFace(img, options).withFaceLandmarks().withFaceDescriptor();
+  if(!sdet){ modalLogAdd('Nenhum rosto detectado na selfie.'); return; }
+  const queryDesc = sdet.descriptor;
+
+  // carregar fotos list e processar em lotes
+  modalLogAdd('Carregando lista de fotos para buscar correspondências...');
+  const res = await fetch('Forjados/fotos.json'); const fotos = await res.json();
+  const matchesEl = $('#matches');
+  matchesEl.innerHTML = '';
+  let matches = [];
+  const batchSize = 4;
+  for(let i=0;i<fotos.length;i+=batchSize){
+    const batch = fotos.slice(i,i+batchSize);
+    await Promise.all(batch.map(async foto=>{
+      try{
+        modalLogAdd('Processando: ' + foto.nome);
+        // obter object url (converte HEIC quando possível)
+        const src = await makeObjectURLFromFoto(foto);
+        const fimg = new Image(); fimg.src = src; await fimg.decode();
+        const det = await faceapi.detectSingleFace(fimg, options).withFaceLandmarks().withFaceDescriptor();
+        if(det){
+          const dist = faceapi.euclideanDistance(queryDesc, det.descriptor);
+          // threshold típico 0.6, pode ajustar
+          if(dist <= 0.58){
+            matches.push({nome:foto.nome, url:foto.url, dist});
+          }
+        }
+        // liberar objectURL
+        URL.revokeObjectURL(src);
+      }catch(e){
+        console.warn('erro processamento foto', foto.nome, e);
+      }
+    }));
+    // atualizar progresso
+    const pct = Math.min(100, Math.round(((i + batchSize) / fotos.length) * 100));
+    prog.style.width = pct + '%';
+  }
+
+  if(matches.length===0){
+    modalLogAdd('Nenhuma correspondência clara encontrada (tente outra selfie ou aumentar limite).');
+  } else {
+    modalLogAdd('Encontradas ' + matches.length + ' correspondências.');
+    matches.sort((a,b)=>a.dist - b.dist);
+    for(const m of matches){
+      const d = document.createElement('div');
+      d.className='match';
+      d.innerHTML = `<strong>${m.nome}</strong><br><a href="${m.url}" target="_blank" style="color:var(--accent2)">Ver / Baixar</a><div style="font-size:12px;color:#aaa">dist: ${m.dist.toFixed(3)}</div>`;
+      matchesEl.appendChild(d);
+    }
+  }
+}
+
+/* -------------------------
+  Event handlers
+----------------------------*/
+$('#btn-refresh').addEventListener('click', ()=>{ renderGallery() });
+$('#btn-search-face').addEventListener('click', ()=>{
+  showModal();
+});
+
+$('#close-modal').addEventListener('click', ()=>{ hideModal(); });
+$('#use-camera').addEventListener('click', async ()=>{
+  // tenta abrir câmera (compatível com mobile)
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:true});
+    // cria video elemento e tira uma foto
+    const v = document.createElement('video');
+    v.srcObject = stream;
+    await v.play();
+    // tirar foto
+    const canvas = document.createElement('canvas');
+    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+    const ctx = canvas.getContext('2d'); ctx.drawImage(v,0,0);
+    const blob = await new Promise(r=> canvas.toBlob(r,'image/jpeg',0.9));
+    // stop stream
+    stream.getTracks().forEach(t=>t.stop());
+    // seta file input (opcional) e inicia busca
+    $('#selfie-file').files = new DataTransfer().files; // clear
+    // processar
+    modalLog.textContent=''; modalLogAdd('Selfie capturada da câmera. Iniciando busca...');
+    await findFacesWithSelfie(blob);
+  }catch(e){
+    modalLogAdd('Erro ao acessar câmera: ' + e.message);
+  }
+});
+
+$('#start-scan').addEventListener('click', async ()=>{
+  const fi = $('#selfie-file');
+  if(!fi.files || fi.files.length===0){ modalLogAdd('Escolha um arquivo de selfie antes de iniciar.'); return; }
+  modalLog.textContent=''; modalLogAdd('Selfie carregada. Iniciando busca...');
+  await findFacesWithSelfie(fi.files[0]);
+});
+
+/* -------------------------
+  Init
+----------------------------*/
+renderGallery();
+
+</script>
 </body>
 </html>
