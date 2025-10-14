@@ -188,7 +188,7 @@ async function renderGallery(){
   gal.innerHTML = '';
   logStatus('Carregando fotos.json...');
   try{
-    const res = await fetch('Forjados/fotos.json');
+    const res = await fetch('./fotos.json');
     if(!res.ok) throw new Error('Não foi possível ler fotos.json');
     const fotos = await res.json();
     logStatus(`Encontradas ${fotos.length} fotos. Carregando miniaturas (pode demorar)...`);
