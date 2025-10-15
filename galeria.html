@@ -25,15 +25,19 @@
 
   <script>
     async function carregarFotos() {
-      const res = await fetch('./fotos.json');
-      const fotos = await res.json();
-      const galeria = document.getElementById('galeria');
-      fotos.forEach(foto => {
-        const img = document.createElement('img');
-        img.src = foto.url;
-        img.alt = foto.nome;
-        galeria.appendChild(img);
-      });
+      try {
+        const res = await fetch('./fotos.json');
+        const fotos = await res.json();
+        const galeria = document.getElementById('galeria');
+        fotos.forEach(foto => {
+          const img = document.createElement('img');
+          img.src = foto.url;
+          img.alt = foto.nome;
+          galeria.appendChild(img);
+        });
+      } catch (err) {
+        console.error('Erro ao carregar fotos.json:', err);
+      }
     }
 
     carregarFotos();
@@ -45,9 +49,10 @@
       if (!file) return;
       alert('🔍 Procurando rostos semelhantes... Aguarde alguns segundos.');
 
-     await faceapi.nets.tinyFaceDetector.loadFromUri('Forjados/Forjados/models');
-await faceapi.nets.faceLandmark68Net.loadFromUri('Forjados/Forjados/models');
-await faceapi.nets.faceRecognitionNet.loadFromUri('Forjados/Forjados/models');
+      // Caminhos ajustados para a pasta correta
+      await faceapi.nets.tinyFaceDetector.loadFromUri('./Forjados/Forjados/models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('./Forjados/Forjados/models');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('./Forjados/Forjados/models');
 
       const referenceImage = await faceapi.bufferToImage(file);
       const detection = await faceapi
@@ -55,18 +60,31 @@ await faceapi.nets.faceRecognitionNet.loadFromUri('Forjados/Forjados/models');
         .withFaceLandmarks()
         .withFaceDescriptor();
 
-      if (!detection) return alert('Nenhum rosto detectado na imagem enviada 😕');
+      if (!detection) {
+        alert('Nenhum rosto detectado na imagem enviada 😕');
+        return;
+      }
 
-      const res = await fetch('./event-index.json');
-      const index = await res.json();
+      try {
+        const res = await fetch('./event-index.json');
+        const index = await res.json();
 
-      const labeled = index.map(f => new faceapi.LabeledFaceDescriptors(f.nome, [new Float32Array(f.descriptor)]));
+        const labeled = index.map(f =>
+          new faceapi.LabeledFaceDescriptors(f.nome, [new Float32Array(f.descriptor)])
+        );
 
-      const matcher = new faceapi.FaceMatcher(labeled, 0.6);
-      const match = matcher.findBestMatch(detection.descriptor);
+        const matcher = new faceapi.FaceMatcher(labeled, 0.6);
+        const match = matcher.findBestMatch(detection.descriptor);
 
-      if (match.label === 'unknown') alert('Nenhum rosto correspondente encontrado 😢');
-      else alert(🎉 Rosto encontrado na foto: ${match.label});
+        if (match.label === 'unknown') {
+          alert('Nenhum rosto correspondente encontrado 😢');
+        } else {
+          alert(🎉 Rosto encontrado na foto: ${match.label});
+        }
+      } catch (err) {
+        console.error('Erro ao processar reconhecimento:', err);
+        alert('Erro ao carregar o índice de rostos. Tente novamente mais tarde.');
+      }
     };
   </script>
 </body>
