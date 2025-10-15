@@ -3,63 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Galeria - Forjados Legado</title>
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-
+  <title>Galeria de Fotos - Forjados Legado</title>
   <style>
     body {
+      background-color: #1c1c1c;
+      color: #f2f2f2;
       font-family: Arial, sans-serif;
-      background: #0d1117;
-      color: #fff;
       margin: 0;
       padding: 0;
+      text-align: center;
     }
 
     header {
-      background: #161b22;
-      padding: 20px;
-      text-align: center;
-      border-bottom: 2px solid #30363d;
+      padding: 20px 0;
+      background-color: #2b2b2b;
     }
 
     header img {
-      height: 60px;
-      vertical-align: middle;
+      height: 80px;
     }
 
     h1 {
-      margin: 10px 0 0;
-      font-size: 24px;
+      color: #ffffff;
+      margin-top: 10px;
     }
 
     #uploadBtn {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #238636;
+      background-color: #00b050;
       color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 20px;
     }
 
     #uploadBtn:hover {
-      background: #2ea043;
+      background-color: #009040;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 10px;
       padding: 20px;
     }
 
     .grid img {
       width: 100%;
-      border-radius: 8px;
+      border-radius: 5px;
       transition: transform 0.2s;
-      cursor: pointer;
     }
 
     .grid img:hover {
@@ -67,23 +61,21 @@
     }
 
     footer {
-      text-align: center;
+      background-color: #2b2b2b;
       padding: 10px;
-      font-size: 14px;
       color: #8b949e;
-      border-top: 1px solid #30363d;
-      margin-top: 20px;
+      font-size: 14px;
     }
   </style>
 </head>
-
 <body>
+
   <header>
-    <img src="logo.png" alt="Logo Forjados Legado">
+    <img src="logo.png" alt="Forjados Legado">
     <h1>Galeria de Fotos</h1>
   </header>
 
-  <button id="uploadBtn">Procurar meu rosto 🤝</button>
+  <button id="uploadBtn">Procurar meu rosto 👋</button>
   <input type="file" id="uploadInput" accept="image/*" style="display:none">
 
   <div class="grid" id="galeria">
@@ -97,7 +89,7 @@
   <script>
     async function carregarFotos() {
       try {
-        const res = await fetch('./fotos.json');
+        const res = await fetch('fotos.json'); // ✅ fotos.json está na raiz
         if (!res.ok) throw new Error('Erro ao carregar fotos.json');
 
         const fotos = await res.json();
@@ -106,50 +98,20 @@
 
         fotos.forEach(foto => {
           const img = document.createElement('img');
-          img.src = foto.src; // já contém "Forjados/fotos/..."
-          img.alt = foto.alt || '';
+          img.src = foto.src; // ex: Forjados/fotos/IMG_0637.jpg
+          img.alt = foto.alt;
+          img.loading = 'lazy';
           galeria.appendChild(img);
         });
       } catch (erro) {
-        console.error('Erro ao carregar galeria:', erro);
-        const galeria = document.getElementById('galeria');
-        galeria.innerHTML = '<p style="text-align:center; color:red;">❌ Erro ao carregar galeria de fotos.</p>';
+        console.error(erro);
+        document.getElementById('galeria').innerHTML =
+          '<p style="text-align:center; color:red;">Erro ao carregar as fotos.</p>';
       }
     }
 
     carregarFotos();
-
-    // Lógica do reconhecimento facial
-    document.getElementById('uploadBtn').onclick = () => document.getElementById('uploadInput').click();
-
-    document.getElementById('uploadInput').onchange = async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      alert('🔍 Procurando rostos semelhantes... Aguarde alguns segundos.');
-
-      await faceapi.nets.tinyFaceDetector.loadFromUri('./Forjados/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('./Forjados/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('./Forjados/models');
-
-      const referenceImage = await faceapi.bufferToImage(file);
-      const detection = await faceapi
-        .detectSingleFace(referenceImage, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) return alert('Nenhum rosto detectado na imagem enviada 😕');
-
-      const res = await fetch('./event-index.json');
-      const index = await res.json();
-
-      const labeled = index.map(f => new faceapi.LabeledFaceDescriptors(f.nome, [new Float32Array(f.descriptor)]));
-      const matcher = new faceapi.FaceMatcher(labeled, 0.6);
-      const match = matcher.findBestMatch(detection.descriptor);
-
-      if (match.label === 'unknown') alert('Nenhum rosto correspondente encontrado 😢');
-      else alert(🎉 Rosto encontrado na foto: ${match.label});
-    };
   </script>
+
 </body>
 </html>
