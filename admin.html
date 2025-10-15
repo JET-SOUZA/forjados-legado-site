@@ -12,7 +12,7 @@
 </head>
 <body>
   <h1>Gerar Index de Fotos do Evento</h1>
-  <p>Essa página vai carregar as fotos listadas no <code>fotos.json</code>, detectar rostos e gerar o arquivo <code>event-index.json</code> com descritores faciais.</p>
+  <p>Essa página carrega as fotos listadas em <code>fotos.json</code>, detecta rostos e gera o arquivo <code>event-index.json</code>.</p>
   <button id="start">Gerar index</button>
   <div id="log"></div>
 
@@ -22,27 +22,26 @@
     document.getElementById('start').onclick = async () => {
       log('🧠 Carregando modelos locais...');
 
-      // Carrega os modelos do seu repositório local
-      await faceapi.nets.tinyFaceDetector.loadFromUri('Forjados/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('Forjados/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('Forjados/models');
+      // Caminho corrigido para os modelos
+      await faceapi.nets.tinyFaceDetector.loadFromUri('./Forjados/models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('./Forjados/models');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('./Forjados/models');
       log('✅ Modelos carregados com sucesso.');
 
       log('📸 Carregando fotos.json...');
-      const res = await fetch('Forjados/fotos.json');
+      const res = await fetch('./fotos.json');
       const fotos = await res.json();
-      log(`Encontradas ${fotos.length} fotos.`);
+      log(Encontradas ${fotos.length} fotos.);
 
       const resultados = [];
 
-      // Opções do TinyFaceDetector (pode ajustar se quiser mais precisão)
       const options = new faceapi.TinyFaceDetectorOptions({ 
         inputSize: 416, 
         scoreThreshold: 0.5 
       });
 
       for (const [i, foto] of fotos.entries()) {
-        log(`\n🖼️ Processando ${i + 1}/${fotos.length}: ${foto.nome}`);
+        log(\n🖼️ Processando ${i + 1}/${fotos.length}: ${foto.nome});
         try {
           const img = await faceapi.fetchImage(foto.url);
           const detection = await faceapi
@@ -61,11 +60,10 @@
             log(` → Nenhum rosto encontrado ⚠️`);
           }
         } catch (e) {
-          log(`❌ Erro na imagem ${foto.nome}: ${e}`);
+          log(❌ Erro na imagem ${foto.nome}: ${e});
         }
       }
 
-      // Gera o arquivo final
       const blob = new Blob([JSON.stringify(resultados, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
