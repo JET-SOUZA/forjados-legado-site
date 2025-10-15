@@ -1,37 +1,27 @@
-export async function handler(event) {
+export default async (req, res) => {
+  const id = req.query.id;
+
+  if (!id) {
+    return res.status(400).json({ error: "ID não informado" });
+  }
+
   try {
-    const id = event.queryStringParameters.id;
-
-    if (!id) {
-      return {
-        statusCode: 400,
-        body: "Parâmetro 'id' é obrigatório. Exemplo: /foto?id=123abc"
-      };
-    }
-
-    const driveUrl = `https://drive.google.com/uc?export=view&id=${id}`;
-    const response = await fetch(driveUrl);
+    // Monta o link direto do Google Drive
+    const url = `https://drive.google.com/uc?export=view&id=${id}`;
+    const response = await fetch(url);
 
     if (!response.ok) {
-      return {
-        statusCode: 404,
-        body: "Imagem não encontrada no Google Drive."
-      };
+      return res.status(500).json({ error: "Erro ao acessar imagem do Drive" });
     }
 
-    const contentType = response.headers.get("content-type") || "image/jpeg";
+    // Pega o tipo de conteúdo e retorna a imagem binária
+    const contentType = response.headers.get("content-type");
     const arrayBuffer = await response.arrayBuffer();
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": contentType },
-      body: Buffer.from(arrayBuffer).toString("base64"),
-      isBase64Encoded: true
-    };
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.status(200).send(Buffer.from(arrayBuffer));
   } catch (error) {
-    return {
-      statusCode: 500,
-      body: "Erro interno: " + error.message
-    };
+    res.status(500).json({ error: "Erro ao carregar imagem", details: error.message });
   }
-}
+};
