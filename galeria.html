@@ -1,224 +1,73 @@
-[13:25, 15/10/2025] Jonathan Souza - Energia Solar: <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FORJADOS LEGADO — Galeria</title>
-
-  <!-- face-api.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
-  <!-- heic2any para tentar converter HEIC no cliente (se suportado) -->
-  <script defer src="https://unpkg.com/heic2any/dist/heic2any.min.js"></script>
-
-  <style>
-    :root{
-      --bg:#000;
-      --accent1:#ff2c00;
-      --accent2:#ff6a00;
-      --text:#f5f5f5;
-      --card:#0f1720;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial;
-      background:var(…
-[13:30, 15/10/2025] Jonathan Souza - Energia Solar: <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FORJADOS LEGADO — Galeria</title>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeria - Forjados Legado</title>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-  <script defer src="https://unpkg.com/heic2any/dist/heic2any.min.js"></script>
-
   <style>
-    :root {
-      --bg:#000;
-      --accent1:#ff2c00;
-      --accent2:#ff6a00;
-      --text:#f5f5f5;
-      --card:#0f1720;
-    }
-    *{box-sizing:border-box}
-    body {
-      margin:0; font-family:Inter,system-ui,Roboto; background:var(--bg); color:var(--text);
-    }
-    header {
-      text-align:center; padding:28px 16px;
-      background:linear-gradient(90deg,var(--accent1),var(--accent2));
-      color:#fff; box-shadow:0 6px 20px rgba(0,0,0,0.4);
-    }
-    header img{width:120px;height:120px;border-radius:16px;object-fit:cover}
-    header h1{margin:12px 0 4px;font-size:28px;letter-spacing:2px}
-    main{max-width:1200px;margin:28px auto;padding:0 16px}
-    #controls{display:flex;gap:12px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
-    .btn{
-      background:linear-gradient(90deg,var(--accent2),var(--accent1));
-      color:#fff;border:none;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer;
-      box-shadow:0 6px 18px rgba(0,0,0,0.3)
-    }
-    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)}
-    #status{text-align:center;margin-top:10px;color:rgba(255,255,255,0.8)}
-    #galeria{
-      display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;
-    }
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border-radius:12px;padding:8px;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,0.6);
-      transition:transform .18s;overflow:hidden;
-    }
-    .card:hover{transform:translateY(-6px)}
-    .thumb{width:100%;height:140px;border-radius:8px;object-fit:cover;background:#111}
-    footer{color:rgba(255,255,255,.6);text-align:center;padding:20px 0;margin-top:32px;border-top:1px solid rgba(255,255,255,0.03)}
-    /* modal */
-    .modal{position:fixed;left:0;top:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,0.6);z-index:90;visibility:hidden;opacity:0;transition:opacity .2s}
-    .modal.show{visibility:visible;opacity:1}
-    .modal .panel{background:#0b1116;padding:18px;border-radius:12px;width:95%;max-width:720px;color:var(--text)}
-    .progress{height:10px;background:#111;border-radius:6px;overflow:hidden;margin-top:8px}
-    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent1));width:0%}
-    .match{background:#081018;padding:6px;border-radius:8px;color:#fff;font-size:13px;margin-top:8px}
+    body { font-family: sans-serif; background: #111; color: #fff; margin: 0; padding: 0; }
+    h1 { text-align: center; margin: 20px 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; padding: 10px; }
+    .grid img { width: 100%; border-radius: 8px; cursor: pointer; transition: transform 0.2s; }
+    .grid img:hover { transform: scale(1.05); }
+    #uploadInput { display: none; }
+    #uploadBtn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; border: none; border-radius: 8px; background: #444; color: white; cursor: pointer; }
+    #uploadBtn:hover { background: #666; }
   </style>
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="Forjados logo">
-    <h1>FORJADOS LEGADO</h1>
-    <p>Memórias do evento — encontre seu rosto nas fotos</p>
-  </header>
+  <h1>Galeria de Fotos</h1>
+  <button id="uploadBtn">Procurar meu rosto 🤝</button>
+  <input type="file" id="uploadInput" accept="image/*" />
 
-  <main>
-    <div id="controls">
-      <button id="btn-search-face" class="btn">Procurar meu rosto 🤝</button>
-      <button id="btn-refresh" class="btn secondary">Recarregar galeria</button>
-    </div>
+  <div class="grid" id="galeria"></div>
 
-    <div id="status">Carregando galeria...</div>
-    <div id="galeria"></div>
-  </main>
-
-  <footer>© FORJADOS LEGADO — Desenvolvido para servir</footer>
-
-  <div id="modal" class="modal">
-    <div class="panel">
-      <h3>Procurar meu rosto nas fotos</h3>
-      <p>Envie uma selfie ou use a câmera. A busca é feita no seu navegador.</p>
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <input id="selfie-file" type="file" accept="image/*" />
-        <button id="use-camera" class="btn secondary">📷 Câmera</button>
-        <button id="start-scan" class="btn">Iniciar busca</button>
-        <button id="close-modal" class="btn secondary">Fechar</button>
-      </div>
-
-      <div style="margin-top:12px">
-        <div class="progress"><i id="progbar"></i></div>
-        <div id="modal-log" style="margin-top:8px;color:rgba(255,255,255,0.85)"></div>
-        <div id="matches"></div>
-      </div>
-    </div>
-  </div>
-
-<script>
-const $ = s=>document.querySelector(s);
-const gal=$('#galeria'),status=$('#status');
-const modal=$('#modal'),log=$('#modal-log'),prog=$('#progbar');
-
-function showModal(){modal.classList.add('show');log.textContent='';prog.style.width='0%';$('#matches').innerHTML='';}
-function hideModal(){modal.classList.remove('show');}
-function addLog(t){log.textContent+=(log.textContent?'\n':'')+t;}
-
-async function renderGallery(){
-  gal.innerHTML='';status.textContent='Carregando fotos...';
-  try{
-    const res=await fetch('Forjados/fotos.json');
-    const fotos=await res.json();
-    for(const f of fotos){
-      const c=document.createElement('div');c.className='card';
-      c.innerHTML=`
-        <img class="thumb" src="${f.url}" alt="${f.nome}">
-        <div style="padding:6px 0">${f.nome}</div>`;
-      gal.appendChild(c);
+  <script>
+    async function carregarFotos() {
+      const res = await fetch('./fotos.json');
+      const fotos = await res.json();
+      const galeria = document.getElementById('galeria');
+      fotos.forEach(foto => {
+        const img = document.createElement('img');
+        img.src = foto.url;
+        img.alt = foto.nome;
+        galeria.appendChild(img);
+      });
     }
-    status.textContent=${fotos.length} fotos carregadas.;
-  }catch(e){
-    console.error(e);
-    status.textContent='Erro ao carregar galeria.';
-  }
-}
 
-let modelsLoaded=false;
-async function loadModels(){
-  if(modelsLoaded)return;
-  await faceapi.nets.tinyFaceDetector.loadFromUri('Forjados/models');
-  await faceapi.nets.faceLandmark68Net.loadFromUri('Forjados/models');
-  await faceapi.nets.faceRecognitionNet.loadFromUri('Forjados/models');
-  modelsLoaded=true;
-}
+    carregarFotos();
 
-async function findFaces(selfieBlob){
-  await loadModels();
-  addLog('Detectando rosto na selfie...');
-  const selfieUrl=URL.createObjectURL(selfieBlob);
-  const img=new Image();img.src=selfieUrl;await img.decode();
-  const det=await faceapi.detectSingleFace(img,new faceapi.TinyFaceDetectorOptions({inputSize:416,scoreThreshold:0.5})).withFaceLandmarks().withFaceDescriptor();
-  if(!det){addLog('Nenhum rosto detectado.');return;}
-  const queryDesc=det.descriptor;
+    document.getElementById('uploadBtn').onclick = () => document.getElementById('uploadInput').click();
 
-  addLog('Carregando index facial...');
-  const res=await fetch('Forjados/event-index.json');
-  const data=await res.json();
-  addLog(Comparando com ${data.length} fotos...);
-  const matches=[];
-  for(let i=0;i<data.length;i++){
-    const f=data[i];
-    const dist=faceapi.euclideanDistance(queryDesc,f.descriptor);
-    if(dist<0.58){matches.push({...f,dist});}
-    prog.style.width=((i+1)/data.length*100).toFixed(1)+'%';
-  }
+    document.getElementById('uploadInput').onchange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      alert('🔍 Procurando rostos semelhantes... Aguarde alguns segundos.');
 
-  const cont=$('#matches');cont.innerHTML='';
-  if(matches.length===0){addLog('Nenhuma correspondência encontrada.');return;}
-  addLog(${matches.length} correspondência(s) encontradas.);
-  matches.sort((a,b)=>a.dist-b.dist);
-  for(const m of matches){
-    const el=document.createElement('div');
-    el.className='match';
-    el.innerHTML=`<strong>${m.nome}</strong><br>
-      <a href="${m.url}" target="_blank" style="color:var(--accent2)">Ver / Baixar</a><br>
-      <small>dist: ${m.dist.toFixed(3)}</small>`;
-    cont.appendChild(el);
-  }
-}
+      await faceapi.nets.tinyFaceDetector.loadFromUri('./Forjados/models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('./Forjados/models');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('./Forjados/models');
 
-$('#btn-refresh').onclick=renderGallery;
-$('#btn-search-face').onclick=()=>showModal();
-$('#close-modal').onclick=()=>hideModal();
+      const referenceImage = await faceapi.bufferToImage(file);
+      const detection = await faceapi
+        .detectSingleFace(referenceImage, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
-$('#use-camera').onclick=async()=>{
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:true});
-    const v=document.createElement('video');v.srcObject=stream;await v.play();
-    const canvas=document.createElement('canvas');
-    canvas.width=v.videoWidth;canvas.height=v.videoHeight;
-    const ctx=canvas.getContext('2d');ctx.drawImage(v,0,0);
-    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.9));
-    stream.getTracks().forEach(t=>t.stop());
-    addLog('Selfie capturada. Buscando...');
-    await findFaces(blob);
-  }catch(e){addLog('Erro ao usar câmera: '+e.message);}
-};
+      if (!detection) return alert('Nenhum rosto detectado na imagem enviada 😕');
 
-$('#start-scan').onclick=async()=>{
-  const fi=$('#selfie-file');
-  if(!fi.files.length){addLog('Escolha uma selfie primeiro.');return;}
-  addLog('Processando selfie...');
-  await findFaces(fi.files[0]);
-};
+      const res = await fetch('./event-index.json');
+      const index = await res.json();
 
-renderGallery();
-</script>
+      const labeled = index.map(f => new faceapi.LabeledFaceDescriptors(f.nome, [new Float32Array(f.descriptor)]));
+
+      const matcher = new faceapi.FaceMatcher(labeled, 0.6);
+      const match = matcher.findBestMatch(detection.descriptor);
+
+      if (match.label === 'unknown') alert('Nenhum rosto correspondente encontrado 😢');
+      else alert(🎉 Rosto encontrado na foto: ${match.label});
+    };
+  </script>
 </body>
 </html>
