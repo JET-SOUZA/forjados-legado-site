@@ -31,8 +31,8 @@
         const galeria = document.getElementById('galeria');
         fotos.forEach(foto => {
           const img = document.createElement('img');
-          img.src = foto.url;
-          img.alt = foto.nome;
+          img.src = foto.src;
+          img.alt = foto.alt;
           galeria.appendChild(img);
         });
       } catch (err) {
