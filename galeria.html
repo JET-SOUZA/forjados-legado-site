@@ -45,9 +45,9 @@
       if (!file) return;
       alert('🔍 Procurando rostos semelhantes... Aguarde alguns segundos.');
 
-      await faceapi.nets.tinyFaceDetector.loadFromUri('./Forjados/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('./Forjados/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('./Forjados/models');
+     await faceapi.nets.tinyFaceDetector.loadFromUri('Forjados/Forjados/models');
+await faceapi.nets.faceLandmark68Net.loadFromUri('Forjados/Forjados/models');
+await faceapi.nets.faceRecognitionNet.loadFromUri('Forjados/Forjados/models');
 
       const referenceImage = await faceapi.bufferToImage(file);
       const detection = await faceapi
