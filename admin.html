@@ -67,15 +67,15 @@
       log('📁 Carregando fotos.json...');
       const res = await fetch('./fotos.json');
       const fotos = await res.json();
-      log(🔍 ${fotos.length} fotos encontradas.);
+      log(`🔍 ${fotos.length} fotos encontradas.`);
 
       const resultados = [];
       const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
 
       for (const [i, foto] of fotos.entries()) {
-        log(\n🖼️ [${i + 1}/${fotos.length}] Processando: ${foto.nome});
+        log(`\n🖼️ [${i + 1}/${fotos.length}] Processando: ${foto.alt}`);
         try {
-          const img = await faceapi.fetchImage(foto.url);
+          const img = await faceapi.fetchImage(foto.src);
           const detection = await faceapi
             .detectSingleFace(img, options)
             .withFaceLandmarks()
@@ -83,8 +83,8 @@
 
           if (detection) {
             resultados.push({
-              nome: foto.nome,
-              url: foto.url,
+              nome: foto.alt,
+              url: foto.src,
               descriptor: Array.from(detection.descriptor)
             });
             log(' → Rosto detectado ✅');
@@ -92,10 +92,22 @@
             log(' → Nenhum rosto detectado ⚠️');
           }
         } catch (e) {
-          log(❌ Erro na imagem ${foto.nome}: ${e.message});
+          log(`❌ Erro na imagem ${foto.alt}: ${e.message}`);
         }
       }
 
+      // Criar download do event-index.json
       const blob = new Blob([JSON.stringify(resultados, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
-      link.href = URL.create
+      link.href = URL.createObjectURL(blob);
+      link.download = 'event-index.json';
+      link.textContent = '💾 Baixar event-index.json';
+      link.style.display = 'block';
+      link.style.marginTop = '20px';
+      document.body.appendChild(link);
+
+      log('\n✅ Processamento finalizado. Clique no link acima para baixar o event-index.json.');
+    };
+  </script>
+</body>
+</html>
