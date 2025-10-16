@@ -16,7 +16,7 @@
 </head>
 <body>
 
-<div class="grid" id="gallery"></div>
+<div class="grid" id="gallery">Carregando modelos e galeria...</div>
 
 <div id="modal">
   <a id="download" href="#" download>Baixar</a>
@@ -28,11 +28,12 @@ fetch('fotos.json')  // arquivo JSON com todas as fotos e miniaturas
   .then(res => res.json())
   .then(data => {
     const gallery = document.getElementById('gallery');
+    gallery.innerHTML = ""; // remover texto inicial
 
     data.forEach(item => {
       const img = document.createElement('img');
       img.setAttribute('data-src', item.thumb); // lazy load
-      img.setAttribute('data-full', item.original);
+      img.setAttribute('data-full', item.src); // CORRIGIDO AQUI (antes era item.original)
       img.alt = "Foto Forjados";
       gallery.appendChild(img);
     });
@@ -67,6 +68,10 @@ fetch('fotos.json')  // arquivo JSON com todas as fotos e miniaturas
     modal.addEventListener('click', e => {
       if(e.target !== modalImg) modal.style.display = 'none';
     });
+  })
+  .catch(err => {
+    document.getElementById('gallery').innerHTML = "Erro ao carregar galeria.";
+    console.error(err);
   });
 </script>
 
