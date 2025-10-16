@@ -1,332 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Galeria - Forjados Legado (Busca por rosto)</title>
-
-  <style>
-    :root{
-      --bg:#1c1c1c;
-      --panel:#2b2b2b;
-      --muted:#8b949e;
-      --accent:#00b050;
-      --white:#f2f2f2;
-    }
-    html,body{height:100%; margin:0; background:var(--bg); color:var(--white); font-family:Arial,Helvetica,sans-serif;}
-    header{background:var(--panel); padding:18px 12px; text-align:center}
-    header img{height:64px; vertical-align:middle}
-    header h1{margin:8px 0 0; font-size:20px}
-    .controls{display:flex; gap:12px; align-items:center; justify-content:center; padding:14px;}
-    #uploadBtn{background:var(--accent); color:#fff; padding:10px 16px; border-radius:8px; border:0; cursor:pointer; font-weight:600}
-    #resetBtn{background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:8px; cursor:pointer}
-    .status{ text-align:center; color:var(--muted); font-size:14px; margin-bottom:8px }
-    .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; padding:20px; max-width:1200px; margin:0 auto;}
-    .card{ background:transparent; border-radius:6px; overflow:hidden; position:relative; min-height:120px; display:flex; align-items:center; justify-content:center}
-    .card img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .18s; cursor:pointer }
-    .card.hide{ display:none }
-    .card.match{ outline:4px solid rgba(0,176,80,0.15); box-shadow:0 6px 18px rgba(0,0,0,0.6)}
-    .card .label{ position:absolute; left:6px; bottom:6px; background:rgba(0,0,0,0.5); padding:6px 8px; border-radius:4px; color:var(--white); font-size:12px }
-    footer{ background:var(--panel); padding:12px; color:var(--muted); text-align:center; font-size:13px; margin-top:18px }
-    progress{ width:260px; height:12px; appearance:auto; margin-left:8px; vertical-align:middle }
-    .center{ text-align:center }
-    @media (max-width:480px){ .controls{ flex-direction:column } progress{ width:180px } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galeria Forjados</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .grid img { width: 100%; cursor: pointer; border-radius: 6px; transition: transform 0.2s; }
+  .grid img:hover { transform: scale(1.05); }
+  #modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); justify-content:center; align-items:center; }
+  #modal img { max-width:90%; max-height:90%; border-radius: 10px; }
+  #modal a { position: absolute; top: 20px; right: 20px; color:white; font-size:20px; text-decoration:none; background:#333; padding:10px; border-radius:5px;}
+</style>
 </head>
 <body>
 
-<header>
-  <img src="logo.png" alt="Forjados Legado">
-  <h1>Galeria de Fotos — Procurar por rosto</h1>
-</header>
+<div class="grid" id="gallery"></div>
 
-<div class="controls">
-  <div>
-    <button id="uploadBtn">Procurar meu rosto 👋</button>
-    <input id="uploadInput" type="file" accept="image/*" style="display:none">
-    <button id="resetBtn" title="Mostrar todas">Mostrar todas</button>
-  </div>
-  <div class="status" id="status">Carregando modelos e galeria... <span id="progressText"></span></div>
+<div id="modal">
+  <a id="download" href="#" download>Baixar</a>
+  <img id="modal-img" src="">
 </div>
-
-<div class="center" id="progressWrap" style="display:flex; justify-content:center; gap:8px; align-items:center;">
-  <progress id="progress" value="0" max="100" style="display:none"></progress>
-</div>
-
-<main>
-  <div class="grid" id="galeria">
-    <p style="text-align:center; color:var(--muted); width:100%;">Carregando fotos...</p>
-  </div>
-</main>
-
-<footer>
-  © 2025 Forjados Legado. Desenvolvido por você — ajustes e melhorias disponíveis.
-</footer>
-
-<!-- face-api.js CDN - necessária conexão com internet ao testar. -->
-<script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
 <script>
-(async function(){
-  // Configs
-  const MODELS_PATH = '/models'; // já confirmamos a pasta
-  const FOTOS_JSON = 'fotos.json'; // seu arquivo
-  const MATCH_THRESHOLD = 0.58; // distância <= = match. ajuste se precisar
-  const TINY_OPTIONS = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.5 });
+fetch('fotos.json')  // arquivo JSON com todas as fotos e miniaturas
+  .then(res => res.json())
+  .then(data => {
+    const gallery = document.getElementById('gallery');
 
-  // DOM
-  const uploadBtn = document.getElementById('uploadBtn');
-  const uploadInput = document.getElementById('uploadInput');
-  const resetBtn = document.getElementById('resetBtn');
-  const statusEl = document.getElementById('status');
-  const progress = document.getElementById('progress');
-  const progressText = document.getElementById('progressText');
-  const galeria = document.getElementById('galeria');
-
-  let fotosList = [];
-  let descriptorsIndex = []; // { src, alt, descriptor, distance }
-
-  function setStatus(text){
-    statusEl.innerText = text;
-  }
-  function showProgress(show){
-    progress.style.display = show ? 'inline-block' : 'none';
-  }
-
-  // 1) Carregar modelos
-  setStatus('Carregando modelos (face-api.js)...');
-  await faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_PATH);
-  await faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODELS_PATH);
-  await faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_PATH);
-
-  // 2) Carregar fotos.json
-  setStatus('Carregando lista de fotos...');
-  try {
-    const r = await fetch(FOTOS_JSON);
-    if(!r.ok) throw new Error('Não foi possível carregar fotos.json');
-    fotosList = await r.json();
-  } catch(e){
-    galeria.innerHTML = '<p style="text-align:center;color:red;">Erro ao carregar fotos.json — verifique o caminho.</p>';
-    console.error(e);
-    setStatus('Erro ao carregar fotos.json');
-    return;
-  }
-
-  // Render placeholder grid while processing
-  galeria.innerHTML = '';
-  fotosList.forEach((f,i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.dataset.src = f.src;
-    card.dataset.alt = f.alt;
-    const img = document.createElement('img');
-    img.src = f.src;
-    img.alt = f.alt;
-    img.loading = 'lazy';
-    img.draggable = false;
-    const label = document.createElement('div');
-    label.className = 'label';
-    label.innerText = f.alt;
-    card.appendChild(img);
-    card.appendChild(label);
-    galeria.appendChild(card);
-  });
-
-  // 3) Preprocessar: gerar descriptors para cada imagem (quando houver rosto)
-  setStatus('Processando imagens — gerando descriptors (pode demorar)...');
-  showProgress(true);
-  progress.max = fotosList.length;
-  progress.value = 0;
-
-  // function to fetch image and compute descriptor
-  async function descriptorForImage(src){
-    try {
-      // faceapi.fetchImage returns an HTMLImageElement
-      const img = await faceapi.fetchImage(src);
-      const detection = await faceapi.detectSingleFace(img, TINY_OPTIONS)
-        .withFaceLandmarks(true)
-        .withFaceDescriptor();
-      if(!detection) return null;
-      return detection.descriptor;
-    } catch(err){
-      console.warn('Erro ao processar imagem', src, err);
-      return null;
-    }
-  }
-
-  // iterate with some concurrency limit to avoid blocking too long
-  const CONCURRENCY = 4;
-  let idx = 0;
-  async function worker(){
-    while(true){
-      const i = idx++;
-      if(i >= fotosList.length) break;
-      const f = fotosList[i];
-      const src = f.src;
-      // compute descriptor
-      const desc = await descriptorForImage(src);
-      descriptorsIndex[i] = { src, alt: f.alt, descriptor: desc, distance: null };
-      progress.value = i+1;
-      progressText.innerText = `${i+1}/${fotosList.length}`;
-    }
-  }
-
-  // start workers
-  const workers = [];
-  for(let w=0; w<CONCURRENCY; w++) workers.push(worker());
-  await Promise.all(workers);
-
-  showProgress(false);
-
-  // remove entries without descriptor (no face detected)
-  descriptorsIndex = descriptorsIndex.filter(Boolean); // remove undefined slots
-  const initialCount = fotosList.length;
-  const withFaceCount = descriptorsIndex.filter(x => x.descriptor).length;
-
-  setStatus(`Processamento concluído. ${withFaceCount} / ${initialCount} fotos com rosto detectado.`);
-
-  // mark cards with no face as dim (optional)
-  const cards = Array.from(document.querySelectorAll('.card'));
-  cards.forEach(card => {
-    const src = card.dataset.src;
-    const match = descriptorsIndex.find(d => d.src === src && d.descriptor);
-    if(!match){
-      card.style.opacity = '0.28';
-      card.title = 'Nenhum rosto detectado nesta foto';
-    } else {
-      card.style.opacity = '1';
-    }
-  });
-
-  // helper: compare descriptors
-  function euclideanDistance(d1, d2){
-    let sum = 0;
-    for(let i=0;i<d1.length;i++){
-      const diff = d1[i]-d2[i];
-      sum += diff*diff;
-    }
-    return Math.sqrt(sum);
-  }
-
-  // UI: upload handler
-  uploadBtn.addEventListener('click', ()=> uploadInput.click());
-  uploadInput.addEventListener('change', async (ev) => {
-    const file = ev.target.files[0];
-    if(!file) return;
-    await handleQueryImageFile(file);
-    // reset input so same file can be selected again if needed
-    uploadInput.value = '';
-  });
-
-  // support drag&drop onto document (optional)
-  document.addEventListener('dragover', e => e.preventDefault());
-  document.addEventListener('drop', async e => {
-    e.preventDefault();
-    const file = e.dataTransfer.files && e.dataTransfer.files[0];
-    if(file) await handleQueryImageFile(file);
-  });
-
-  async function handleQueryImageFile(file){
-    setStatus('Processando imagem enviada...');
-    showProgress(true);
-    progress.max = 1;
-    progress.value = 0;
-    // convert file to image element
-    const img = await fileToImage(file);
-    // detect face & descriptor
-    const detection = await faceapi.detectSingleFace(img, TINY_OPTIONS).withFaceLandmarks(true).withFaceDescriptor();
-    if(!detection){
-      setStatus('Nenhum rosto detectado na imagem enviada. Tente outra foto.');
-      showProgress(false);
-      return;
-    }
-    const queryDesc = detection.descriptor;
-    // compute distances to all descriptors
-    descriptorsIndex.forEach(d => {
-      if(!d.descriptor) d.distance = Infinity;
-      else d.distance = euclideanDistance(queryDesc, d.descriptor);
-    });
-    // filter matches
-    const matches = descriptorsIndex.filter(d => d.distance <= MATCH_THRESHOLD).sort((a,b)=>a.distance-b.distance);
-    // update UI: hide non-matches, show matches sorted
-    if(matches.length === 0){
-      setStatus('Nenhuma correspondência encontrada (ajuste threshold se necessário).');
-    } else {
-      setStatus(`Encontradas ${matches.length} correspondência(s).`);
-    }
-    // Hide all cards first
-    cards.forEach(c => c.classList.add('hide'));
-    // For matches, show cards in order
-    for(const m of matches){
-      const card = cards.find(c => c.dataset.src === m.src);
-      if(card){
-        card.classList.remove('hide');
-        card.classList.add('match');
-        // add distance label
-        let lbl = card.querySelector('.label');
-        if(lbl) lbl.innerText = `${m.alt} · ${(m.distance||0).toFixed(3)}`;
-        // ensure click opens image
-        card.onclick = ()=> window.open(m.src, '_blank');
-      }
-    }
-    // If no matches, show a helpful message in grid
-    if(matches.length === 0){
-      galeria.innerHTML = '<p style="text-align:center;color:var(--muted);width:100%;">Nenhuma foto da galeria correspondeu ao rosto enviado.</p>';
-    } else {
-      // reorder DOM to show matches first (optional)
-      // remove existing nodes and append matched cards in order
-      const matchCards = matches.map(m => cards.find(c => c.dataset.src === m.src)).filter(Boolean);
-      galeria.innerHTML = '';
-      matchCards.forEach(mc => galeria.appendChild(mc));
-    }
-
-    showProgress(false);
-  }
-
-  // helper: file -> image
-  async function fileToImage(file){
-    return new Promise((resolve, reject)=>{
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = ()=> { URL.revokeObjectURL(url); resolve(img); };
-      img.onerror = (e)=> { URL.revokeObjectURL(url); reject(e); };
-      img.src = url;
-    });
-  }
-
-  // Reset / show all
-  resetBtn.addEventListener('click', () => {
-    setStatus(`Mostrando todas as fotos (${initialCount})`);
-    // restore grid to original order
-    galeria.innerHTML = '';
-    fotosList.forEach(f => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.dataset.src = f.src;
-      card.dataset.alt = f.alt;
+    data.forEach(item => {
       const img = document.createElement('img');
-      img.src = f.src;
-      img.alt = f.alt;
-      img.loading = 'lazy';
-      img.draggable = false;
-      const label = document.createElement('div');
-      label.className = 'label';
-      label.innerText = f.alt;
-      card.appendChild(img);
-      card.appendChild(label);
-      // clicking opens image in new tab to download
-      card.onclick = ()=> window.open(f.src, '_blank');
-      // set opacity according to whether face descriptor exists
-      const has = descriptorsIndex.find(d => d.src === f.src && d.descriptor);
-      if(!has) card.style.opacity = '0.28';
-      galeria.appendChild(card);
+      img.setAttribute('data-src', item.thumb); // lazy load
+      img.setAttribute('data-full', item.original);
+      img.alt = "Foto Forjados";
+      gallery.appendChild(img);
+    });
+
+    // Lazy loading
+    const lazyImages = document.querySelectorAll('img[data-src]');
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          const img = entry.target;
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          obs.unobserve(img);
+        }
+      });
+    }, {rootMargin: "50px"});
+    lazyImages.forEach(img => observer.observe(img));
+
+    // Modal
+    const modal = document.getElementById('modal');
+    const modalImg = document.getElementById('modal-img');
+    const downloadLink = document.getElementById('download');
+
+    gallery.addEventListener('click', e => {
+      if(e.target.tagName === 'IMG'){
+        modal.style.display = 'flex';
+        modalImg.src = e.target.dataset.full;
+        downloadLink.href = e.target.dataset.full;
+      }
+    });
+
+    modal.addEventListener('click', e => {
+      if(e.target !== modalImg) modal.style.display = 'none';
     });
   });
-
-  // final initial status
-  setStatus(`Pronto — ${withFaceCount} fotos com rosto detectado. Clique em "Procurar meu rosto" para buscar.`);
-})();
 </script>
 
 </body>
