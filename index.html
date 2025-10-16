@@ -1,15 +1,92 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=galeria.html">
-  <title>Redirecionando...</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galeria Forjados</title>
+<style>
+  body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
+  .container { padding: 10px; max-width: 600px; margin: auto; }
+  input[type=file] { margin: 10px 0; }
+  #gallery { display: grid; grid-template-columns: repeat(auto-fill,minmax(100px,1fr)); gap: 5px; }
+  #gallery img { width: 100%; cursor: pointer; border-radius: 5px; }
+  button { margin-top: 10px; padding: 5px 10px; border:none; border-radius:5px; background:#007bff; color:white; cursor:pointer; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
-  <p>Redirecionando para a galeria...</p>
-  <script>
-    // Caso o redirecionamento meta falhe, o script faz o backup
-    window.location.href = "galeria.html";
-  </script>
+<div class="container">
+  <h2>Galeria Forjados</h2>
+  <input type="file" id="selfie" accept="image/*">
+  <div id="gallery"></div>
+</div>
+
+<script>
+const fotoJsonUrl = 'fotos.json';
+let fotos = [];
+let labeledFaceDescriptors;
+
+async function carregarFotos() {
+  const res = await fetch(fotoJsonUrl);
+  fotos = await res.json();
+}
+
+async function carregarModelos() {
+  await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+  await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+  await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+}
+
+function mostrarMiniaturas(fotosFiltradas) {
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = '';
+  fotosFiltradas.forEach(foto => {
+    const img = document.createElement('img');
+    img.src = foto.url;
+    img.alt = foto.name;
+    img.onclick = () => {
+      const link = document.createElement('a');
+      link.href = foto.url;
+      link.download = foto.name;
+      link.click();
+    };
+    gallery.appendChild(img);
+  });
+}
+
+async function filtrarPorRosto(file) {
+  const img = await faceapi.bufferToImage(file);
+  const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+  if (!detections) {
+    alert('Não foi possível detectar rosto na selfie.');
+    return;
+  }
+
+  const faceMatcher = new faceapi.FaceMatcher([detections]);
+  const fotosFiltradas = [];
+
+  for (let foto of fotos) {
+    const f = await fetch(foto.url);
+    const blob = await f.blob();
+    const imgFoto = await faceapi.bufferToImage(blob);
+    const det = await faceapi.detectSingleFace(imgFoto).withFaceLandmarks().withFaceDescriptor();
+    if (det && faceMatcher.findBestMatch(det.descriptor).label !== 'unknown') {
+      fotosFiltradas.push(foto);
+    }
+  }
+
+  mostrarMiniaturas(fotosFiltradas);
+}
+
+document.getElementById('selfie').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) filtrarPorRosto(file);
+});
+
+(async () => {
+  await carregarFotos();
+  await carregarModelos();
+})();
+</script>
 </body>
 </html>
