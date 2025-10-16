@@ -1,5 +1,5 @@
 {
-  "static": {
-    "public": "Forjados"
-  }
+  "public": "Forjados",
+  "cleanUrls": true
 }
+
