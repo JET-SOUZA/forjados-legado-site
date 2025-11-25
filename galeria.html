@@ -1,79 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Galeria Forjados</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-  .grid img { width: 100%; cursor: pointer; border-radius: 6px; transition: transform 0.2s; }
-  .grid img:hover { transform: scale(1.05); }
-  #modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); justify-content:center; align-items:center; }
-  #modal img { max-width:90%; max-height:90%; border-radius: 10px; }
-  #modal a { position: absolute; top: 20px; right: 20px; color:white; font-size:20px; text-decoration:none; background:#333; padding:10px; border-radius:5px;}
-</style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Galeria — Igreja Semeando Amor</title>
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg">
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.png" alt="Logo" class="logo">
+      <h1>Galeria de Fotos — Igreja Semeando Amor</h1>
+    </div>
+  </header>
 
-<div class="grid" id="gallery">Carregando modelos e galeria...</div>
+  <main class="container">
+    <section class="gallery-card">
+      <div id="gallery" class="grid">Carregando galeria…</div>
+    </section>
+  </main>
 
-<div id="modal">
-  <a id="download" href="#" download>Baixar</a>
-  <img id="modal-img" src="">
-</div>
+  <div id="lightbox" class="lightbox" aria-hidden="true">
+    <button id="closeLb" class="lb-close">✕</button>
+    <img id="lb-img" src="" alt="Preview">
+    <a id="lb-download" class="lb-download" download>Baixar</a>
+  </div>
 
 <script>
-fetch('fotos.json')  // arquivo JSON com todas as fotos e miniaturas
-  .then(res => res.json())
+/* Inline minimal script to load fotos.json (works with your existing fotos.json structure) */
+fetch('fotos.json')
+  .then(r => r.json())
   .then(data => {
     const gallery = document.getElementById('gallery');
-    gallery.innerHTML = ""; // remover texto inicial
-
+    gallery.innerHTML = '';
     data.forEach(item => {
+      const wrap = document.createElement('div');
+      wrap.className = 'thumb-wrap';
       const img = document.createElement('img');
-      img.setAttribute('data-src', item.thumb); // lazy load
-      img.setAttribute('data-full', item.src); // CORRIGIDO AQUI (antes era item.original)
-      img.alt = "Foto Forjados";
-      gallery.appendChild(img);
+      img.dataset.full = item.src;
+      img.dataset.thumb = item.thumb;
+      img.alt = item.alt || item.src;
+      img.loading = 'lazy';
+      img.src = item.thumb; // usar thumb para grid
+      wrap.appendChild(img);
+      gallery.appendChild(wrap);
     });
 
-    // Lazy loading
-    const lazyImages = document.querySelectorAll('img[data-src]');
-    const observer = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
-        if(entry.isIntersecting){
-          const img = entry.target;
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-          obs.unobserve(img);
-        }
-      });
-    }, {rootMargin: "50px"});
-    lazyImages.forEach(img => observer.observe(img));
-
-    // Modal
-    const modal = document.getElementById('modal');
-    const modalImg = document.getElementById('modal-img');
-    const downloadLink = document.getElementById('download');
+    // Lightbox
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lb-img');
+    const lbDownload = document.getElementById('lb-download');
 
     gallery.addEventListener('click', e => {
-      if(e.target.tagName === 'IMG'){
-        modal.style.display = 'flex';
-        modalImg.src = e.target.dataset.full;
-        downloadLink.href = e.target.dataset.full;
+      if (e.target && e.target.tagName === 'IMG') {
+        const full = e.target.dataset.full;
+        lbImg.src = full;
+        lbDownload.href = full;
+        lb.style.display = 'flex';
+        lb.setAttribute('aria-hidden','false');
       }
     });
 
-    modal.addEventListener('click', e => {
-      if(e.target !== modalImg) modal.style.display = 'none';
-    });
+    document.getElementById('closeLb').onclick = () => {
+      const lb = document.getElementById('lightbox');
+      lb.style.display = 'none';
+      lb.setAttribute('aria-hidden','true');
+    };
   })
   .catch(err => {
-    document.getElementById('gallery').innerHTML = "Erro ao carregar galeria.";
+    document.getElementById('gallery').innerText = 'Erro ao carregar fotos.';
     console.error(err);
   });
 </script>
-
 </body>
 </html>
