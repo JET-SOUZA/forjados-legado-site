@@ -1,16 +1,22 @@
-// script.js — compatível com sua estrutura (Option A)
-const FOTO_JSON = './Forjados/fotos.json';
-const EVENT_INDEX = './Forjados/event-index.json';
-const MODELS_PATH = './Forjados/Forjados/models'; // sua estrutura confirmada
+// script.js — versão corrigida para sua estrutura REAL no GitHub
+
+// caminhos corretos
+const FOTO_JSON = './fotos.json';
+const EVENT_INDEX = './event-index.json';     // pode nem existir ainda, tudo bem
+const MODELS_PATH = './models';               // seus modelos estão na pasta models/
 
 const statusEl = () => document.getElementById('status');
 const galleryEl = () => document.getElementById('gallery');
 
 let fotos = [];
-let descriptorsIndex = []; // [{nome, url, descriptor:Array<number>}]
+let descriptorsIndex = [];
 
+// ==============================================
+// INICIALIZAÇÃO
+// ==============================================
 async function init(){
-  statusEl().innerText = 'Carregando fotos e índices...';
+  statusEl().innerText = 'Carregando fotos...';
+
   // carregar fotos.json
   try {
     const r = await fetch(FOTO_JSON);
@@ -21,44 +27,51 @@ async function init(){
     return;
   }
 
-  // carregar event-index.json (pode não existir; admin.html cria)
+  // carregar event-index.json (opcional)
   try {
     const r2 = await fetch(EVENT_INDEX);
     descriptorsIndex = await r2.json();
   } catch (e) {
-    console.warn('event-index.json não encontrado. A busca usará fallback (mais lenta).');
+    console.warn('event-index.json não encontrado. (Busca lenta ativada)');
     descriptorsIndex = [];
   }
 
-  // carregar face-api.js modelos (tinyFaceDetector para velocidade)
-  statusEl().innerText = 'Carregando modelos de face-api.js...';
+  // carregar modelos face-api.js
+  statusEl().innerText = 'Carregando modelos...';
   await Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_PATH),
     faceapi.nets.faceLandmark68Net.loadFromUri(MODELS_PATH),
     faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_PATH),
   ]);
-  statusEl().innerText = 'Modelos carregados. Pronto para busca por selfie.';
 
-  // exibir inicialmente todas fotos (miniaturas)
+  statusEl().innerText = 'Modelos carregados. Pronto.';
+
+  // mostrar galeria inicial
   renderGallery(fotos);
 }
 
-// render grid de miniaturas
+// ==============================================
+// GALERIA
+// ==============================================
 function renderGallery(items){
   const g = galleryEl();
   g.innerHTML = '';
+
   if(!items || items.length === 0){
     g.innerHTML = '<div style="color:#ccc">Nenhuma foto encontrada.</div>';
     return;
   }
+
   items.forEach(it => {
     const wrap = document.createElement('div');
     wrap.className = 'thumb-wrap';
+
     const img = document.createElement('img');
     img.loading = 'lazy';
     img.src = it.thumb || it.src;
-    img.alt = it.alt || it.src;
     img.dataset.full = it.src;
+    img.alt = it.alt;
+
     wrap.appendChild(img);
     g.appendChild(wrap);
   });
@@ -76,12 +89,15 @@ function renderGallery(items){
       lb.style.display = 'flex';
     }
   };
+
   document.getElementById('closeLb').onclick = () => {
-    document.getElementById('lightbox').style.display = 'none';
+    lb.style.display = 'none';
   };
 }
 
-// distância euclidiana entre descritores
+// ==============================================
+// DISTÂNCIA FACE MATCH
+// ==============================================
 function euclidean(a, b){
   let sum = 0;
   for(let i=0;i<a.length;i++){
@@ -91,63 +107,67 @@ function euclidean(a, b){
   return Math.sqrt(sum);
 }
 
-// busca por selfie
+// ==============================================
+// BUSCAR POR SELFIE
+// ==============================================
 async function handleSelfie(file){
   statusEl().innerText = 'Processando selfie...';
+
   const img = await faceapi.bufferToImage(file);
-  const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+  const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
   if(!det){
-    statusEl().innerText = 'Rosto não detectado na selfie.';
+    statusEl().innerText = 'Rosto não detectado.';
     return;
   }
-  const queryDesc = Array.from(det.descriptor);
 
+  const query = Array.from(det.descriptor);
   let matches = [];
-  if(descriptorsIndex && descriptorsIndex.length){
-    // usa event-index.json (rápido)
-    for(const entry of descriptorsIndex){
-      const dist = euclidean(queryDesc, entry.descriptor);
-      if(dist <= 0.58){ // threshold ajustável
-        matches.push({url: entry.url || entry.url, name: entry.nome || entry.name || entry.url, dist});
-      }
+
+  if(descriptorsIndex.length){
+    // modo rápido
+    for(const f of descriptorsIndex){
+      const dist = euclidean(query, f.descriptor);
+      if(dist <= 0.58) matches.push({url: f.url, dist});
     }
   } else {
-    // fallback: comparar com cada foto (muito mais lento)
-    statusEl().innerText = 'Comparando com todas as fotos (pode demorar)...';
+    // fallback: comparar uma por uma (lento)
+    statusEl().innerText = 'Comparando com todas as fotos (lento)...';
     for(const f of fotos){
       try {
-        const res = await fetch(f.src);
-        const blob = await res.blob();
+        const blob = await (await fetch(f.src)).blob();
         const imgF = await faceapi.bufferToImage(blob);
-        const detF = await faceapi.detectSingleFace(imgF, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+        const detF = await faceapi.detectSingleFace(imgF, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
         if(detF){
-          const dist = euclidean(queryDesc, Array.from(detF.descriptor));
-          if(dist <= 0.58) matches.push({url: f.src, name: f.alt || f.src, dist});
+          const dist = euclidean(query, Array.from(detF.descriptor));
+          if(dist <= 0.58) matches.push({url: f.src, dist});
         }
-      } catch (e){
-        console.warn('Erro processando foto', f.src, e);
-      }
+      }catch(e){}
     }
   }
 
   if(matches.length === 0){
-    statusEl().innerText = 'Nenhuma foto correspondente encontrada.';
-    renderGallery([]); // limpa resultados
+    statusEl().innerText = 'Nenhuma foto encontrada.';
+    renderGallery([]);
     return;
   }
 
-  // ordenar por distância (melhor primeiro)
-  matches.sort((a,b) => a.dist - b.dist);
-  // mapear para objetos do fotos.json
-  const resultados = fotos.filter(f => matches.some(m => (m.url === f.src || m.url === f.url)));
-  statusEl().innerText = `Encontradas ${resultados.length} fotos (melhor distância ${matches[0].dist.toFixed(3)})`;
-  renderGallery(resultados);
+  matches.sort((a,b)=>a.dist-b.dist);
+
+  const results = fotos.filter(f => matches.some(m => m.url === f.src));
+
+  statusEl().innerText = `Encontradas ${results.length} fotos`;
+  renderGallery(results);
 }
 
 // input selfie
 document.getElementById('selfie').addEventListener('change', e => {
-  const f = e.target.files && e.target.files[0];
-  if(f) handleSelfie(f);
+  if(e.target.files.length) handleSelfie(e.target.files[0]);
 });
 
 // iniciar
