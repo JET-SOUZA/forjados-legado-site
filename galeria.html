@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg">
+
   <header class="topbar">
     <div class="brand">
       <img src="logo.png" alt="Logo" class="logo">
@@ -20,6 +21,7 @@
     </section>
   </main>
 
+  <!-- LIGHTBOX -->
   <div id="lightbox" class="lightbox" aria-hidden="true">
     <button id="closeLb" class="lb-close">✕</button>
     <img id="lb-img" src="" alt="Preview">
@@ -27,21 +29,24 @@
   </div>
 
 <script>
-/* Carrega fotos usando o seu fotos.json (localizado em /Forjados/fotos.json) */
-fetch('./Forjados/fotos.json')
-  .then(r => r.json())
+// Carrega o fotos.json (na mesma pasta do HTML)
+fetch('./fotos.json')
+  .then(res => res.json())
   .then(data => {
     const gallery = document.getElementById('gallery');
     gallery.innerHTML = '';
+
     data.forEach(item => {
       const wrap = document.createElement('div');
       wrap.className = 'thumb-wrap';
+
       const img = document.createElement('img');
+      img.src = item.thumb || item.src;
       img.dataset.full = item.src;
-      img.dataset.thumb = item.thumb || item.src;
-      img.alt = item.alt || item.src;
+      img.alt = item.alt || '';
+
       img.loading = 'lazy';
-      img.src = item.thumb || item.src; // usar thumb para grid
+
       wrap.appendChild(img);
       gallery.appendChild(wrap);
     });
@@ -52,7 +57,7 @@ fetch('./Forjados/fotos.json')
     const lbDownload = document.getElementById('lb-download');
 
     gallery.addEventListener('click', e => {
-      if (e.target && e.target.tagName === 'IMG') {
+      if (e.target.tagName === 'IMG') {
         const full = e.target.dataset.full;
         lbImg.src = full;
         lbDownload.href = full;
@@ -67,9 +72,10 @@ fetch('./Forjados/fotos.json')
     };
   })
   .catch(err => {
-    document.getElementById('gallery').innerText = 'Erro ao carregar fotos.';
     console.error(err);
+    document.getElementById('gallery').innerText = 'Erro ao carregar fotos.';
   });
 </script>
+
 </body>
 </html>
