@@ -45,23 +45,26 @@
 </head>
 <body>
   <h1>🧠 Gerar Index de Fotos do Evento</h1>
-  <p>Esse painel analisa todas as fotos listadas em <code>fotos.json</code>, detecta rostos e cria o arquivo <code>event-index.json</code> para ser usado na galeria.</p>
+  <p>Esse painel analisa todas as fotos listadas em <code>fotos.json</code>, detecta rostos e cria o arquivo <code>event-index.json</code>.</p>
 
   <button id="start">Gerar Index</button>
   <div id="log"></div>
 
   <script>
+    const MODELS_PATH = './models';
+
     const log = msg => {
-      const logEl = document.getElementById('log');
-      logEl.textContent += msg + '\n';
-      logEl.scrollTop = logEl.scrollHeight;
+      const el = document.getElementById('log');
+      el.textContent += msg + '\n';
+      el.scrollTop = el.scrollHeight;
     };
 
     document.getElementById('start').onclick = async () => {
-      log('🧩 Carregando modelos de reconhecimento...');
-      await faceapi.nets.tinyFaceDetector.loadFromUri('./Forjados/Forjados/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('./Forjados/Forjados/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('./Forjados/Forjados/models');
+
+      log('🧩 Carregando modelos...');
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_PATH);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODELS_PATH);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODELS_PATH);
       log('✅ Modelos carregados.');
 
       log('📁 Carregando fotos.json...');
@@ -76,27 +79,27 @@
         log(`\n🖼️ [${i + 1}/${fotos.length}] Processando: ${foto.alt}`);
         try {
           const img = await faceapi.fetchImage(foto.src);
-          const detection = await faceapi
+          const det = await faceapi
             .detectSingleFace(img, options)
             .withFaceLandmarks()
             .withFaceDescriptor();
 
-          if (detection) {
+          if (det) {
             resultados.push({
               nome: foto.alt,
               url: foto.src,
-              descriptor: Array.from(detection.descriptor)
+              descriptor: Array.from(det.descriptor)
             });
             log(' → Rosto detectado ✅');
           } else {
             log(' → Nenhum rosto detectado ⚠️');
           }
         } catch (e) {
-          log(`❌ Erro na imagem ${foto.alt}: ${e.message}`);
+          log(`❌ Erro: ${e.message}`);
         }
       }
 
-      // Criar download do event-index.json
+      // gerar arquivo
       const blob = new Blob([JSON.stringify(resultados, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -106,7 +109,7 @@
       link.style.marginTop = '20px';
       document.body.appendChild(link);
 
-      log('\n✅ Processamento finalizado. Clique no link acima para baixar o event-index.json.');
+      log('\n✅ Finalizado!');
     };
   </script>
 </body>
