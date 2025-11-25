@@ -1,7 +1,7 @@
-// script.js — para index.html
-const FOTO_JSON = 'fotos.json';
-const EVENT_INDEX = 'event-index.json'; // gerado por admin.html
-const MODELS_PATH = './Forjados/Forjados/models'; // sua estrutura atual
+// script.js — compatível com sua estrutura (Option A)
+const FOTO_JSON = './Forjados/fotos.json';
+const EVENT_INDEX = './Forjados/event-index.json';
+const MODELS_PATH = './Forjados/Forjados/models'; // sua estrutura confirmada
 
 const statusEl = () => document.getElementById('status');
 const galleryEl = () => document.getElementById('gallery');
@@ -26,11 +26,11 @@ async function init(){
     const r2 = await fetch(EVENT_INDEX);
     descriptorsIndex = await r2.json();
   } catch (e) {
-    console.warn('event-index.json não encontrado ou mal formado. A busca por selfie ainda pode processar imagens em tempo real, porém será mais lenta.');
+    console.warn('event-index.json não encontrado. A busca usará fallback (mais lenta).');
     descriptorsIndex = [];
   }
 
-  // carregar face-api.js modelos
+  // carregar face-api.js modelos (tinyFaceDetector para velocidade)
   statusEl().innerText = 'Carregando modelos de face-api.js...';
   await Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_PATH),
@@ -91,7 +91,7 @@ function euclidean(a, b){
   return Math.sqrt(sum);
 }
 
-// busca por selfie usando event-index.json (rápido) ou comparação direta com fotos
+// busca por selfie
 async function handleSelfie(file){
   statusEl().innerText = 'Processando selfie...';
   const img = await faceapi.bufferToImage(file);
@@ -102,17 +102,17 @@ async function handleSelfie(file){
   }
   const queryDesc = Array.from(det.descriptor);
 
-  // se temos descriptorsIndex (event-index.json), use-o (rápido)
   let matches = [];
   if(descriptorsIndex && descriptorsIndex.length){
+    // usa event-index.json (rápido)
     for(const entry of descriptorsIndex){
       const dist = euclidean(queryDesc, entry.descriptor);
-      if(dist <= 0.58){ // threshold ajustável (0.55-0.6)
+      if(dist <= 0.58){ // threshold ajustável
         matches.push({url: entry.url || entry.url, name: entry.nome || entry.name || entry.url, dist});
       }
     }
   } else {
-    // fallback: processar fotos.json (mais lento)
+    // fallback: comparar com cada foto (muito mais lento)
     statusEl().innerText = 'Comparando com todas as fotos (pode demorar)...';
     for(const f of fotos){
       try {
@@ -136,11 +136,10 @@ async function handleSelfie(file){
     return;
   }
 
-  // ordenar por distância (melhor primeiro) e mapear para fotos originais
+  // ordenar por distância (melhor primeiro)
   matches.sort((a,b) => a.dist - b.dist);
-
-  // pegar objetos do fotos.json que correspondam às urls
-  const resultados = fotos.filter(f => matches.some(m => (m.url === f.src || m.url === f.url || m.url === f.url_original || m.url === f.url)));
+  // mapear para objetos do fotos.json
+  const resultados = fotos.filter(f => matches.some(m => (m.url === f.src || m.url === f.url)));
   statusEl().innerText = `Encontradas ${resultados.length} fotos (melhor distância ${matches[0].dist.toFixed(3)})`;
   renderGallery(resultados);
 }
