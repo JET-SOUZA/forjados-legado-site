@@ -27,8 +27,8 @@
   </div>
 
 <script>
-/* Inline minimal script to load fotos.json (works with your existing fotos.json structure) */
-fetch('fotos.json')
+/* Carrega fotos usando o seu fotos.json (localizado em /Forjados/fotos.json) */
+fetch('./Forjados/fotos.json')
   .then(r => r.json())
   .then(data => {
     const gallery = document.getElementById('gallery');
@@ -38,10 +38,10 @@ fetch('fotos.json')
       wrap.className = 'thumb-wrap';
       const img = document.createElement('img');
       img.dataset.full = item.src;
-      img.dataset.thumb = item.thumb;
+      img.dataset.thumb = item.thumb || item.src;
       img.alt = item.alt || item.src;
       img.loading = 'lazy';
-      img.src = item.thumb; // usar thumb para grid
+      img.src = item.thumb || item.src; // usar thumb para grid
       wrap.appendChild(img);
       gallery.appendChild(wrap);
     });
@@ -62,7 +62,6 @@ fetch('fotos.json')
     });
 
     document.getElementById('closeLb').onclick = () => {
-      const lb = document.getElementById('lightbox');
       lb.style.display = 'none';
       lb.setAttribute('aria-hidden','true');
     };
